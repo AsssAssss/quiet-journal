@@ -1,0 +1,22 @@
+node_modules
+dist
+coverage
+.DS_Store
+*.log
+playwright-report
+test-results
+.vite
+.env
+.env.*
+!.env.example
+
+# Capacitor 原生项目（按需重新生成：npx cap add ios|android）
+ios/
+android/
+
+# tsc 增量缓存
+*.tsbuildinfo
+
+# Claude Code 本地配置
+.claude/
+

@@ -1,0 +1,37 @@
+{
+	# Caddy 全局配置：自动 HTTPS（Let's Encrypt）
+	email admin@example.com
+}
+
+# 把下面这一行改成你的域名
+quiet-api.example.com {
+	# CORS：仅允许你的前端域名访问；多个用逗号
+	@cors_preflight method OPTIONS
+	header {
+		Access-Control-Allow-Origin "https://quiet-journal.pages.dev"
+		Access-Control-Allow-Credentials "true"
+		Access-Control-Allow-Headers "Content-Type, Authorization, X-Token"
+		Access-Control-Allow-Methods "GET, POST, PATCH, DELETE, OPTIONS"
+		Access-Control-Max-Age "86400"
+	}
+	respond @cors_preflight 204
+
+	# 反向代理到 PocketBase
+	reverse_proxy pocketbase:8090
+
+	# 简单 IP 限流（每分钟 ≤ 120 请求）
+	# 需要 caddy 启用 rate_limit 模块（caddy-rate-limit），未启用时本块可注释
+	# rate_limit {
+	#   zone main {
+	#     key {remote_host}
+	#     events 120
+	#     window 1m
+	#   }
+	# }
+}
+
+# 本地开发：http://localhost:8090 直接访问 PB；下面提供一个本地反代示例
+:8443 {
+	tls internal
+	reverse_proxy pocketbase:8090
+}

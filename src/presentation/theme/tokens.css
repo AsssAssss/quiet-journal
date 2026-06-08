@@ -1,0 +1,55 @@
+/* 设计 token —— 浅色为默认值，深色在 .dark 下覆盖 */
+:root {
+  --bg: #FAFAF7;
+  --surface: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+
+  --text-primary: #1B1D22;
+  --text-muted: #6C6F76;
+
+  --accent: #2B2D33;
+  --accent-soft: rgba(43, 45, 51, 0.08);
+
+  --border: rgba(0, 0, 0, 0.06);
+
+  --mood-1: #A7B7C7; /* 低落 */
+  --mood-2: #B7C2A7; /* 平静 */
+  --mood-3: #D9C9A2; /* 一般 */
+  --mood-4: #E1B58A; /* 不错 */
+  --mood-5: #D89A82; /* 愉悦 */
+  --mood-6: #C77B7B; /* 兴奋 */
+
+  --ease-quiet: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-quiet: 200ms;
+
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #15161A;
+  --surface: #1B1D22;
+  --surface-elevated: #20232A;
+
+  --text-primary: #E7E5DF;
+  --text-muted: #8A8C92;
+
+  --accent: #D6AE7B;
+  --accent-soft: rgba(214, 174, 123, 0.12);
+
+  --border: rgba(255, 255, 255, 0.06);
+
+  --mood-1: #6F7E8C;
+  --mood-2: #7E8A6F;
+  --mood-3: #9C8F6E;
+  --mood-4: #A48460;
+  --mood-5: #9E6F5E;
+  --mood-6: #9A5A5A;
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-quiet: 0ms;
+  }
+}
