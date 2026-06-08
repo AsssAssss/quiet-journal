@@ -1,5 +1,7 @@
 # Quiet · 安静日记
 
+[![CI](https://github.com/AsssAssss/quiet-journal/actions/workflows/ci.yml/badge.svg)](https://github.com/AsssAssss/quiet-journal/actions/workflows/ci.yml)
+
 一个简约不简单、低调有格调的 Web 端日记本。本地优先，可选加密，可选 WebDAV 同步。
 
 ## 主要能力
