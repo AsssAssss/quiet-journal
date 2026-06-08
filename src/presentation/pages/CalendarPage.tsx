@@ -13,9 +13,9 @@ export function CalendarPage() {
   }, [loaded, load]);
 
   return (
-    <div className="mx-auto max-w-3xl px-10 py-16">
-      <h1 className="font-serif text-2xl mb-6">日历</h1>
-      <div className="quiet-card p-6">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 md:px-10 py-8 md:py-16">
+      <h1 className="font-serif text-xl md:text-2xl mb-6">日历</h1>
+      <div className="quiet-card p-3 md:p-6">
         <Calendar
           month={month}
           entries={entries}

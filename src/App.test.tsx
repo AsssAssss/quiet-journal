@@ -18,7 +18,7 @@ function renderApp(initial = '/timeline') {
 
 async function ready() {
   await waitFor(() => {
-    expect(screen.getByText('Quiet')).toBeInTheDocument();
+    expect(screen.getAllByText('Quiet').length).toBeGreaterThan(0);
   });
 }
 

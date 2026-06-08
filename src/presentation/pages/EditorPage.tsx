@@ -26,8 +26,8 @@ interface Draft {
 
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[64px_1fr] items-center gap-3">
-      <div className="text-xs text-muted tracking-wider select-none">{label}</div>
+    <div className="grid grid-cols-[48px_1fr] md:grid-cols-[64px_1fr] items-start gap-2 md:gap-3">
+      <div className="text-xs text-muted tracking-wider select-none pt-1.5">{label}</div>
       <div className="min-w-0">{children}</div>
     </div>
   );
@@ -93,12 +93,12 @@ export function EditorPage() {
 
   if (!entry || !draft) {
     return (
-      <div className="mx-auto max-w-3xl px-10 py-16 text-muted">载入中…</div>
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 md:px-10 py-8 md:py-16 text-muted">载入中…</div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-10 py-16">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 md:px-10 py-8 md:py-16">
       <div className="flex items-center justify-between mb-3 text-xs text-muted tracking-wider uppercase">
         <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
         <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export function EditorPage() {
         placeholder="未命名的一天"
         aria-label="标题"
         data-testid="entry-title"
-        className="w-full bg-transparent border-0 font-serif text-3xl leading-tight mb-4 outline-none placeholder:text-muted/60"
+        className="w-full bg-transparent border-0 font-serif text-2xl md:text-3xl leading-tight mb-4 outline-none placeholder:text-muted/60"
       />
 
       {/* 元数据条 —— 心情 · 天气 · 标签 */}

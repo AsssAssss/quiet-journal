@@ -1,5 +1,6 @@
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/presentation/components/Sidebar/Sidebar';
+import { TopBar } from '@/presentation/components/TopBar';
 import { EditorPage } from '@/presentation/pages/EditorPage';
 import { TimelinePage } from '@/presentation/pages/TimelinePage';
 import { CalendarPage } from '@/presentation/pages/CalendarPage';
@@ -21,6 +22,7 @@ export function App() {
   const navigate = useNavigate();
   const { create } = useEntryStore();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     void init();
@@ -76,8 +78,9 @@ export function App() {
   return (
     <ErrorBoundary>
       <div className="flex h-full">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 overflow-y-auto min-w-0">
+          <TopBar onMenuClick={() => setSidebarOpen(true)} />
           <Routes>
             <Route path="/" element={<EditorPage />} />
             <Route path="/entry/:id" element={<EditorPage />} />

@@ -21,7 +21,7 @@ export function SettingsPage() {
   const { status, setup, lock, disable } = useVaultStore();
 
   return (
-    <div className="mx-auto max-w-3xl px-10 py-16">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 md:px-10 py-8 md:py-16">
       <h1 className="font-serif text-2xl mb-8">设置</h1>
 
       <section className="space-y-6">

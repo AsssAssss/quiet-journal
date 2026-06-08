@@ -38,7 +38,7 @@ export function TimelinePage() {
   const groups = useMemo(() => groupByMonth(filteredEntries), [filteredEntries]);
 
   return (
-    <div className="mx-auto max-w-3xl px-10 py-16">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 md:px-10 py-8 md:py-16">
       <div className="flex items-center justify-between mb-6 gap-4">
         <h1 className="font-serif text-2xl">时间线</h1>
         <button

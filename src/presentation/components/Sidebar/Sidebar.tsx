@@ -9,84 +9,125 @@ const navItems = [
   { to: '/settings', label: '设置', icon: SettingsIcon },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  /** 移动端抽屉是否打开（桌面始终常驻） */
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { theme, toggle } = useTheme();
   const { status, lock } = useVaultStore();
+
+  const handleNavClick = () => onClose?.();
+
   return (
-    <aside
-      className="flex h-full w-56 shrink-0 flex-col border-r"
-      style={{ borderColor: 'var(--border)' }}
-      aria-label="主导航"
-    >
-      <div className="px-5 pt-6 pb-4">
-        <div className="font-serif text-lg tracking-wide">Quiet</div>
-        <div className="text-xs text-muted mt-1">安静地记录</div>
-      </div>
+    <>
+      {/* 移动端遮罩 */}
+      <div
+        className={`fixed inset-0 z-30 md:hidden transition-opacity duration-quiet ease-quiet ${
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ background: 'rgba(0,0,0,.32)' }}
+        onClick={onClose}
+        aria-hidden
+        data-testid="sidebar-backdrop"
+      />
 
-      <nav className="flex-1 px-2 space-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-quiet ease-quiet ${
-                isActive
-                  ? 'bg-accent-soft text-ink'
-                  : 'text-muted hover:text-ink hover:bg-accent-soft/60'
-              }`
-            }
-          >
-            <item.icon className="h-4 w-4" />
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="px-3 pb-4 pt-3 space-y-2">
-        <button
-          type="button"
-          onClick={() =>
-            window.dispatchEvent(
-              new KeyboardEvent('keydown', { key: 'k', metaKey: true }),
-            )
-          }
-          className="quiet-btn w-full justify-between"
-          aria-label="命令面板"
-          data-testid="sidebar-cmdk"
-        >
-          <span>命令面板</span>
-          <span className="text-muted text-xs">⌘K</span>
-        </button>
-        {status === 'unlocked' && (
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r
+          transition-transform duration-quiet ease-quiet
+          ${open ? 'translate-x-0' : '-translate-x-full'}
+          md:relative md:translate-x-0 md:w-56
+        `}
+        style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}
+        aria-label="主导航"
+      >
+        <div className="px-5 pt-6 pb-4 flex items-start justify-between">
+          <div>
+            <div className="font-serif text-lg tracking-wide">Quiet</div>
+            <div className="text-xs text-muted mt-1">安静地记录</div>
+          </div>
+          {/* 移动端关闭按钮 */}
           <button
             type="button"
-            onClick={lock}
-            className="quiet-btn w-full justify-between"
-            aria-label="立即锁定"
-            data-testid="sidebar-lock"
+            onClick={onClose}
+            aria-label="关闭菜单"
+            className="md:hidden inline-flex h-8 w-8 items-center justify-center rounded text-muted hover:text-ink transition-colors"
           >
-            <span className="inline-flex items-center gap-2">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                <rect x="5" y="11" width="14" height="9" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
-              </svg>
-              立即锁定
-            </span>
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            </svg>
           </button>
-        )}
-        <button
-          type="button"
-          onClick={toggle}
-          className="quiet-btn w-full justify-between"
-          aria-label="切换主题"
-          data-testid="theme-toggle"
-        >
-          <span>{theme === 'dark' ? '深色' : '浅色'}</span>
-          <span className="text-muted text-xs">⌘/</span>
-        </button>
-      </div>
-    </aside>
+        </div>
+
+        <nav className="flex-1 px-2 space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              onClick={handleNavClick}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-quiet ease-quiet ${
+                  isActive
+                    ? 'bg-accent-soft text-ink'
+                    : 'text-muted hover:text-ink hover:bg-accent-soft/60'
+                }`
+              }
+            >
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="px-3 pb-4 pt-3 space-y-2">
+          <button
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'k', metaKey: true }),
+              )
+            }
+            className="quiet-btn w-full justify-between"
+            aria-label="命令面板"
+            data-testid="sidebar-cmdk"
+          >
+            <span>命令面板</span>
+            <span className="text-muted text-xs">⌘K</span>
+          </button>
+          {status === 'unlocked' && (
+            <button
+              type="button"
+              onClick={lock}
+              className="quiet-btn w-full justify-between"
+              aria-label="立即锁定"
+              data-testid="sidebar-lock"
+            >
+              <span className="inline-flex items-center gap-2">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                  <rect x="5" y="11" width="14" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+                </svg>
+                立即锁定
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={toggle}
+            className="quiet-btn w-full justify-between"
+            aria-label="切换主题"
+            data-testid="theme-toggle"
+          >
+            <span>{theme === 'dark' ? '深色' : '浅色'}</span>
+            <span className="text-muted text-xs">⌘/</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 
