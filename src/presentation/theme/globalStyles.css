@@ -192,8 +192,9 @@ mark {
 }
 .quiet-task-list li > label {
   flex: 0 0 auto;
-  /* 7px：行高 28px、checkbox 14px → checkbox 中心落在行内 14px ≈ 首行字形视觉中心 */
-  margin-top: 0.4375rem;
+  /* 中文字形在 28px 行高里视觉中心略偏上（≈ 12px），所以 margin-top 取 5px
+     让 checkbox 中心 = 5 + 7 = 12px 与字形中心对齐 */
+  margin-top: 0.3125rem;
   user-select: none;
 }
 .quiet-task-list li > label input[type='checkbox'] {
@@ -206,8 +207,6 @@ mark {
   cursor: pointer;
   position: relative;
   background: transparent;
-  /* 视觉补偿：方框比字符"重"，稍向上 1px 与基线更和谐 */
-  transform: translateY(-1px);
   transition:
     background-color var(--dur-quiet) var(--ease-quiet),
     border-color var(--dur-quiet) var(--ease-quiet);

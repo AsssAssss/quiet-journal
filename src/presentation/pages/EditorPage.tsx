@@ -26,8 +26,8 @@ interface Draft {
 
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[48px_1fr] md:grid-cols-[64px_1fr] items-start gap-2 md:gap-3">
-      <div className="text-xs text-muted tracking-wider select-none pt-1.5">{label}</div>
+    <div className="grid grid-cols-[48px_1fr] md:grid-cols-[64px_1fr] items-center gap-2 md:gap-3 min-h-[32px]">
+      <div className="text-xs text-muted tracking-wider select-none">{label}</div>
       <div className="min-w-0">{children}</div>
     </div>
   );
