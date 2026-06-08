@@ -11,6 +11,37 @@ interface ToolItem {
   run: () => void;
 }
 
+type ListKind = 'bulletList' | 'orderedList' | 'taskList';
+const TOGGLE_CMD: Record<
+  ListKind,
+  'toggleBulletList' | 'toggleOrderedList' | 'toggleTaskList'
+> = {
+  bulletList: 'toggleBulletList',
+  orderedList: 'toggleOrderedList',
+  taskList: 'toggleTaskList',
+};
+
+/**
+ * 在 bulletList / orderedList / taskList 三种列表之间互转。
+ * Tiptap 自带的 toggleXxxList 只关心是否在自家列表中，跨列表切换无法直接工作。
+ *  - 已在目标列表中：执行 toggle（退出列表，回到段落）
+ *  - 在另一种列表中：先退出当前，再进入目标（chain 一气呵成）
+ *  - 不在任何列表中：直接进入目标
+ */
+function switchList(editor: Editor, target: ListKind): void {
+  const KINDS = ['bulletList', 'orderedList', 'taskList'] as const;
+  const current = KINDS.find((k) => editor.isActive(k));
+  if (current === target) {
+    editor.chain().focus()[TOGGLE_CMD[target]]().run();
+    return;
+  }
+  if (current) {
+    editor.chain().focus()[TOGGLE_CMD[current]]()[TOGGLE_CMD[target]]().run();
+    return;
+  }
+  editor.chain().focus()[TOGGLE_CMD[target]]().run();
+}
+
 export function EditorToolbar({ editor }: EditorToolbarProps) {
   if (!editor) return null;
 
@@ -49,19 +80,19 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       label: '•',
       hint: '项目符号列表',
       isActive: () => editor.isActive('bulletList'),
-      run: () => editor.chain().focus().toggleBulletList().run(),
+      run: () => switchList(editor, 'bulletList'),
     },
     {
       label: '1.',
       hint: '编号列表',
       isActive: () => editor.isActive('orderedList'),
-      run: () => editor.chain().focus().toggleOrderedList().run(),
+      run: () => switchList(editor, 'orderedList'),
     },
     {
       label: '☐',
       hint: '任务清单（可勾选）',
       isActive: () => editor.isActive('taskList'),
-      run: () => editor.chain().focus().toggleTaskList().run(),
+      run: () => switchList(editor, 'taskList'),
     },
     {
       label: '⌗',
