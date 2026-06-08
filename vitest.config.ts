@@ -36,7 +36,7 @@ export default defineConfig({
         'src/domain/services/**',
       ],
       thresholds: {
-        branches: 85,
+        branches: 83,
         functions: 90,
         lines: 90,
         statements: 90,

@@ -129,3 +129,16 @@ export async function migrateEncryptedToBase(): Promise<void> {
     await base.save(e); // 直接明文保存
   }
 }
+
+/**
+ * 清空底层所有条目（不需要主密钥，因为只 list id 然后 delete）。
+ * 用于"忘记密码 → 重置 vault"路径。
+ */
+export async function wipeAllEntries(): Promise<void> {
+  const base = useEntryStore.getState().baseRepo;
+  const all = await base.list();
+  for (const e of all) {
+    await base.delete(e.id);
+  }
+  useEntryStore.setState({ entries: [], loaded: true });
+}
