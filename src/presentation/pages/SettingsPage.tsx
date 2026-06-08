@@ -197,37 +197,9 @@ function PrivacySection({ status, onEnable, onLock, onDisable }: PrivacySectionP
             </div>
             <div className="pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
               <div className="text-sm mb-2">空闲自动锁定</div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { ms: 0, label: '关闭' },
-                  { ms: 5 * 60_000, label: '5 分钟' },
-                  { ms: 15 * 60_000, label: '15 分钟' },
-                  { ms: 60 * 60_000, label: '1 小时' },
-                ].map((opt) => {
-                  const active = idleMs === opt.ms;
-                  return (
-                    <button
-                      key={opt.ms}
-                      type="button"
-                      className="quiet-btn"
-                      onClick={() => {
-                        setIdleLockMs(opt.ms);
-                        setIdleMsState(opt.ms);
-                      }}
-                      style={{
-                        background: active ? 'var(--accent)' : undefined,
-                        color: active ? 'var(--bg)' : undefined,
-                        borderColor: active ? 'transparent' : undefined,
-                      }}
-                      data-testid={`idle-lock-${opt.ms}`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
+              <IdleLockSelector value={idleMs} onChange={setIdleMsState} />
               <div className="text-xs text-muted mt-2">
-                当前：{idleMs === 0 ? '不自动锁定' : `${idleMs / 60_000} 分钟`}（默认 {DEFAULT_IDLE_MS / 60_000} 分钟）
+                当前：{describeIdle(idleMs)}（默认 {DEFAULT_IDLE_MS / 60_000} 分钟）
               </div>
             </div>
           </div>
@@ -251,6 +223,101 @@ function PrivacySection({ status, onEnable, onLock, onDisable }: PrivacySectionP
         }}
       />
     </>
+  );
+}
+
+const IDLE_PRESETS = [
+  { ms: 0, label: '关闭' },
+  { ms: 5 * 60_000, label: '5 分钟' },
+  { ms: 15 * 60_000, label: '15 分钟' },
+  { ms: 60 * 60_000, label: '1 小时' },
+];
+
+function describeIdle(ms: number): string {
+  if (ms <= 0) return '不自动锁定';
+  const m = Math.round(ms / 60_000);
+  if (m < 60) return `${m} 分钟`;
+  if (m % 60 === 0) return `${m / 60} 小时`;
+  return `${Math.floor(m / 60)} 小时 ${m % 60} 分钟`;
+}
+
+interface IdleLockSelectorProps {
+  value: number;
+  onChange: (ms: number) => void;
+}
+
+function IdleLockSelector({ value, onChange }: IdleLockSelectorProps) {
+  const isPreset = IDLE_PRESETS.some((p) => p.ms === value);
+  const customMinutes =
+    !isPreset && value > 0 ? String(Math.round(value / 60_000)) : '';
+  const [draft, setDraft] = useState<string>(customMinutes);
+
+  useEffect(() => {
+    setDraft(customMinutes);
+  }, [customMinutes]);
+
+  const apply = (raw: string) => {
+    setDraft(raw);
+    const m = Number(raw);
+    if (Number.isFinite(m) && m >= 1 && m <= 1440) {
+      const ms = m * 60_000;
+      setIdleLockMs(ms);
+      onChange(ms);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {IDLE_PRESETS.map((opt) => {
+          const active = value === opt.ms;
+          return (
+            <button
+              key={opt.ms}
+              type="button"
+              className="quiet-btn"
+              onClick={() => {
+                setIdleLockMs(opt.ms);
+                onChange(opt.ms);
+              }}
+              style={{
+                background: active ? 'var(--accent)' : undefined,
+                color: active ? 'var(--bg)' : undefined,
+                borderColor: active ? 'transparent' : undefined,
+              }}
+              data-testid={`idle-lock-${opt.ms}`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-muted text-xs">自定义</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={1440}
+          value={draft}
+          onChange={(e) => apply(e.target.value)}
+          placeholder="1 – 1440"
+          aria-label="自定义自动锁定分钟数"
+          data-testid="idle-lock-custom"
+          className="quiet-input w-28"
+        />
+        <span className="text-muted text-xs">分钟</span>
+        {!isPreset && value > 0 && (
+          <span
+            className="text-xs"
+            style={{ color: 'var(--accent)' }}
+            data-testid="idle-lock-custom-active"
+          >
+            已生效
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
