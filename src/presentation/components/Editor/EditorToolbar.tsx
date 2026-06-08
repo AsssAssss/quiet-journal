@@ -124,8 +124,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             title={it.hint}
             aria-label={it.hint}
             aria-pressed={active}
-            className="inline-flex h-7 min-w-[28px] items-center justify-center rounded px-1.5 text-xs text-muted hover:text-ink transition-colors duration-quiet ease-quiet"
-            style={{ background: active ? 'var(--accent-soft)' : 'transparent' }}
+            className="editor-tool-btn"
           >
             {it.label}
           </button>

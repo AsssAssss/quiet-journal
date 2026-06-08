@@ -178,6 +178,33 @@ mark {
   pointer-events: none;
 }
 
+/* === 编辑器工具栏按钮 === */
+.editor-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.75rem;
+  min-width: 28px;
+  padding: 0 0.375rem;
+  border-radius: 4px;
+  font-size: 0.75rem;        /* 12px，与 MetaRow label 一致 */
+  font-weight: 300;          /* 字重调细，匹配中文字面视觉重量 */
+  letter-spacing: 0.05em;    /* tracking-wider，与 label 一致 */
+  color: var(--text-muted);
+  background: transparent;
+  transition:
+    background-color var(--dur-quiet) var(--ease-quiet),
+    color var(--dur-quiet) var(--ease-quiet);
+}
+.editor-tool-btn:hover {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+.editor-tool-btn[aria-pressed='true'] {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+
 /* === 任务清单（可勾选） === */
 .quiet-task-list {
   padding-left: 0.25rem !important;
