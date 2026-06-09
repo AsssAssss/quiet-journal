@@ -6,6 +6,8 @@ import {
   type WebDavConfig,
 } from '@/infrastructure/sync/webdavSyncAdapter';
 import { PocketBaseSyncAdapter } from '@/infrastructure/sync/pocketbaseSyncAdapter';
+import { FileSystemSyncAdapter } from '@/infrastructure/sync/fileSystemSyncAdapter';
+import { loadDirHandle } from '@/infrastructure/storage/dirHandleStore';
 import { useEntryStore, reloadEntries } from './entryStore';
 import { useAuthStore } from './authStore';
 import { logger } from '@/shared/logger';
@@ -18,7 +20,9 @@ export type SyncStatus = 'idle' | 'testing' | 'syncing' | 'ok' | 'error';
 
 export type SyncConfig =
   | ({ kind: 'webdav' } & WebDavConfig)
-  | { kind: 'pocketbase'; baseUrl: string };
+  | { kind: 'pocketbase'; baseUrl: string }
+  /** 本地文件夹同步：handle 单独存在 IndexedDB（dirHandleStore），这里只标记类型 */
+  | { kind: 'filesystem'; folderName: string };
 
 interface SyncState {
   config: SyncConfig | null;
@@ -63,16 +67,24 @@ function readLastSync(): number | null {
 }
 
 /** 根据配置 + 当前认证状态创建对应 adapter */
-export function makeAdapter(cfg: SyncConfig): IRemoteSyncAdapter {
+export async function makeAdapter(cfg: SyncConfig): Promise<IRemoteSyncAdapter> {
   if (cfg.kind === 'webdav') {
     return new WebdavSyncAdapter(cfg);
   }
-  const auth = useAuthStore.getState();
-  return new PocketBaseSyncAdapter({
-    baseUrl: cfg.baseUrl,
-    token: auth.token ?? '',
-    userId: auth.user?.id ?? '',
-  });
+  if (cfg.kind === 'pocketbase') {
+    const auth = useAuthStore.getState();
+    return new PocketBaseSyncAdapter({
+      baseUrl: cfg.baseUrl,
+      token: auth.token ?? '',
+      userId: auth.user?.id ?? '',
+    });
+  }
+  // filesystem：从 IndexedDB 取出 directory handle
+  const handle = await loadDirHandle();
+  if (!handle) {
+    throw new Error('未找到已授权的本地文件夹，请重新选择');
+  }
+  return new FileSystemSyncAdapter({ dirHandle: handle });
 }
 
 export const useSyncStore = create<SyncState>((set, get) => ({
@@ -103,7 +115,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     }
     set({ status: 'testing', error: undefined });
     try {
-      const adapter = makeAdapter(cfg);
+      const adapter = await makeAdapter(cfg);
       await adapter.ping();
       set({ status: 'ok' });
     } catch (e) {
@@ -120,7 +132,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     }
     set({ status: 'syncing', error: undefined });
     try {
-      const adapter = makeAdapter(cfg);
+      const adapter = await makeAdapter(cfg);
       const result = await syncEntries({
         local: useEntryStore.getState().baseRepo,
         remote: adapter,

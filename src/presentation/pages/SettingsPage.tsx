@@ -8,6 +8,14 @@ import {
 } from '@/presentation/state/entryStore';
 import { useSyncStore } from '@/presentation/state/syncStore';
 import { useAuthStore } from '@/presentation/state/authStore';
+import {
+  isFileSystemSyncSupported,
+} from '@/infrastructure/sync/fileSystemSyncAdapter';
+import {
+  clearDirHandle,
+  loadDirHandle,
+  saveDirHandle,
+} from '@/infrastructure/storage/dirHandleStore';
 import { ConfirmDialog } from '@/presentation/components/ConfirmDialog';
 import { format } from 'date-fns';
 import {
@@ -334,7 +342,12 @@ function SyncSection() {
     sync,
   } = useSyncStore();
   const auth = useAuthStore();
-  const [kind, setKind] = useState<'pocketbase' | 'webdav'>('pocketbase');
+  const [kind, setKind] = useState<'pocketbase' | 'webdav' | 'filesystem'>(
+    'filesystem',
+  );
+  const [fsFolderName, setFsFolderName] = useState<string>('');
+  const [fsPicking, setFsPicking] = useState(false);
+  const fsSupported = isFileSystemSyncSupported();
   // PocketBase 表单
   const [pbUrl, setPbUrl] = useState('');
   const [pbEmail, setPbEmail] = useState('');
@@ -358,10 +371,53 @@ function SyncSection() {
       setDavUrl(config.baseUrl);
       setDavUsername(config.username);
       setDavPassword(config.password);
-    } else {
+    } else if (config.kind === 'pocketbase') {
       setPbUrl(config.baseUrl);
+    } else if (config.kind === 'filesystem') {
+      setFsFolderName(config.folderName);
     }
   }, [config]);
+
+  // 启动时检查本地文件夹 handle 是否仍有效
+  useEffect(() => {
+    if (!fsSupported) return;
+    void loadDirHandle().then((h) => {
+      if (h) setFsFolderName(h.name);
+    });
+  }, [fsSupported]);
+
+  const pickFolder = async () => {
+    setFsPicking(true);
+    try {
+      const handle = await (
+        window as Window & {
+          showDirectoryPicker?: (opts?: {
+            mode?: 'read' | 'readwrite';
+          }) => Promise<FileSystemDirectoryHandle>;
+        }
+      ).showDirectoryPicker?.({ mode: 'readwrite' });
+      if (!handle) return;
+      // 立即请求 readwrite 权限
+      const perm = await handle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') {
+        throw new Error('未授予读写权限');
+      }
+      await saveDirHandle(handle);
+      setFsFolderName(handle.name);
+      saveConfig({ kind: 'filesystem', folderName: handle.name });
+    } catch (e) {
+      if ((e as DOMException).name === 'AbortError') return; // 用户取消
+      window.alert((e as Error).message || '选择失败');
+    } finally {
+      setFsPicking(false);
+    }
+  };
+
+  const clearFolder = async () => {
+    await clearDirHandle();
+    setFsFolderName('');
+    saveConfig(null);
+  };
 
   return (
     <div className="quiet-card p-6">
@@ -382,35 +438,106 @@ function SyncSection() {
       </div>
 
       {/* 后端类型切换 */}
-      <div className="flex gap-2 mb-4" role="radiogroup" aria-label="同步后端类型">
-        {(['pocketbase', 'webdav'] as const).map((k) => {
+      <div className="flex flex-wrap gap-2 mb-4" role="radiogroup" aria-label="同步后端类型">
+        {(['filesystem', 'pocketbase', 'webdav'] as const).map((k) => {
           const active = kind === k;
+          const disabled = k === 'filesystem' && !fsSupported;
+          const label =
+            k === 'pocketbase'
+              ? '自建后端（PocketBase）'
+              : k === 'webdav'
+                ? 'WebDAV'
+                : '本地文件夹';
           return (
             <button
               key={k}
               type="button"
               role="radio"
               aria-checked={active}
+              disabled={disabled}
               onClick={() => setKind(k)}
               data-testid={`sync-kind-${k}`}
               className="quiet-btn"
-              style={
-                active
+              style={{
+                ...(active
                   ? {
                       background: 'var(--accent)',
                       color: 'var(--bg)',
                       borderColor: 'transparent',
                     }
+                  : {}),
+                opacity: disabled ? 0.4 : 1,
+                cursor: disabled ? 'not-allowed' : 'pointer',
+              }}
+              title={
+                disabled
+                  ? '此浏览器不支持 File System Access API（仅 Chrome / Edge / Brave 桌面端）'
                   : undefined
               }
             >
-              {k === 'pocketbase' ? '自建后端（PocketBase）' : 'WebDAV'}
+              {label}
             </button>
           );
         })}
       </div>
 
-      {kind === 'pocketbase' ? (
+      {kind === 'filesystem' ? (
+        <div className="space-y-3">
+          <div className="text-muted text-xs leading-5">
+            选一个本地文件夹（如 <code>~/Documents/Quiet</code>），每条日记会写入该文件夹下的
+            <code className="mx-0.5 px-1 rounded" style={{ background: 'var(--accent-soft)' }}>
+              entries/&lt;id&gt;.jdiary
+            </code>
+            。即使浏览器清缓存也不会丢失（文件夹放进 iCloud Drive / OneDrive / Syncthing 还能白嫖同步）。
+          </div>
+          {fsFolderName ? (
+            <div
+              className="flex items-center justify-between gap-3 px-3 py-2 rounded"
+              style={{ background: 'var(--accent-soft)' }}
+            >
+              <div className="text-sm min-w-0">
+                <div className="text-muted text-xs">当前文件夹</div>
+                <div className="font-mono truncate">{fsFolderName}/</div>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  type="button"
+                  className="quiet-btn"
+                  onClick={pickFolder}
+                  disabled={fsPicking}
+                  data-testid="fs-change"
+                >
+                  {fsPicking ? '请选择…' : '更换'}
+                </button>
+                <button
+                  type="button"
+                  className="quiet-btn"
+                  onClick={() => void clearFolder()}
+                  data-testid="fs-clear"
+                >
+                  断开
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="quiet-btn"
+              onClick={pickFolder}
+              disabled={fsPicking}
+              data-testid="fs-pick"
+              style={{
+                background: 'var(--accent)',
+                color: 'var(--bg)',
+                borderColor: 'transparent',
+                opacity: fsPicking ? 0.5 : 1,
+              }}
+            >
+              {fsPicking ? '请选择文件夹…' : '选择文件夹'}
+            </button>
+          )}
+        </div>
+      ) : kind === 'pocketbase' ? (
         <div className="space-y-3">
           <input
             type="url"

@@ -43,6 +43,28 @@ function currentRepo(base: IEntryRepository): IEntryRepository {
   return base;
 }
 
+export type EntryMutation =
+  | { type: 'put'; id: EntryId }
+  | { type: 'delete'; id: EntryId };
+
+let mutateHook: ((m: EntryMutation) => void) | null = null;
+
+/** 注册 entry 变更钩子（用于 autoSync 等订阅者）。返回取消订阅函数。 */
+export function onEntryMutated(fn: (m: EntryMutation) => void): () => void {
+  mutateHook = fn;
+  return () => {
+    mutateHook = null;
+  };
+}
+
+function emit(m: EntryMutation): void {
+  try {
+    mutateHook?.(m);
+  } catch {
+    /* 钩子错误不影响主流程 */
+  }
+}
+
 export const useEntryStore = create<EntryStoreState>((set, get) => ({
   baseRepo: defaultBase,
   entries: [],
@@ -64,6 +86,7 @@ export const useEntryStore = create<EntryStoreState>((set, get) => ({
   async create() {
     const e = await createEntryUseCase({ entryRepo: currentRepo(get().baseRepo) });
     set({ entries: [e, ...get().entries] });
+    emit({ type: 'put', id: e.id });
     return e;
   },
 
@@ -76,12 +99,14 @@ export const useEntryStore = create<EntryStoreState>((set, get) => ({
     set({
       entries: get().entries.map((it) => (it.id === id ? upd : it)),
     });
+    emit({ type: 'put', id: upd.id });
     return upd;
   },
 
   async remove(id) {
     await deleteEntryUseCase({ entryRepo: currentRepo(get().baseRepo) }, id);
     set({ entries: get().entries.filter((it) => it.id !== id) });
+    emit({ type: 'delete', id });
   },
 }));
 
